@@ -109,7 +109,7 @@ var gradle = { log: function(val){val && console.log( gradle.isMobile && (typeof
 	},
 
 	old_ev: null,
-    process: function(ev, msg){
+process: function(ev, msg){
 		if(gradle.old_ev ==ev){
 			if(ev=='button_share' || ev=='button_play'){
 				console.log('repeat');
@@ -118,19 +118,26 @@ var gradle = { log: function(val){val && console.log( gradle.isMobile && (typeof
 		}
         switch(ev){
             case 'btn_more':
-                gradle.event_ext('show_more');
+                // Redirect to your Mad-Drive game or Hub
+                window.location.href = "https://mozhihub.github.io/Mad-drive/";
                 break;
             case 'btn_privacy':
-                gradle.event_ext('show_privacy');
+                // Link to a privacy policy (required for many bot platforms)
+                window.open("https://yourusername.github.io/privacy-policy", "_blank");
                 break;
             case 'btn_share':
-                gradle.event_ext('show_share');
+                // Share to Telegram with a custom message and your game link
+                const shareText = encodeURIComponent("Check out this Knife Hit game!");
+                const shareUrl = encodeURIComponent(window.location.href);
+                window.open(`https://t.me/share/url?url=${shareUrl}&text=${shareText}`, "_blank");
                 break;
             case 'btn_profile':
-                gradle.event_ext('show_profile');
+                // Redirect to your Telegram Bot Profile
+                window.location.href = "https://t.me/gamendbot";
                 break;
             case 'btn_exit_game':
-                gradle.event_ext('exit_game');
+                // EXIT BUTTON FIX: Goes to a link of your choice (e.g., your Hexa game)
+                window.location.href = "https://mozhihub.github.io/Hexa/";
                 break;
         }
 		gradle.old_ev = ev;
@@ -138,6 +145,7 @@ var gradle = { log: function(val){val && console.log( gradle.isMobile && (typeof
 		return true;
     },
 
+			  
     showInter: function(){
         if(!gradle.isMobile) return;
         gradle.log('jacob|show_inter');
@@ -201,3 +209,4 @@ var gradle = { log: function(val){val && console.log( gradle.isMobile && (typeof
 	}
 };
 gradle.run();
+
