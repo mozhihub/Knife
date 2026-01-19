@@ -17,16 +17,21 @@
 			}
 		</style>
 	</head>
+		<div id="wrongRotation">
+			<img src="images/rotate_screen.png" alt="" />
+		</div>
 
+		<div id="game"></div>
+
+		<div class="font_preload" style="opacity: 0">
+			<span style="font-family: 'gameFont', Arial, sans-serif;"></span>
+		</div>
+		
 	<body>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+
 <script src="lib/phaser.js"></script>
-
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-  // ... (Your Firebase Config Code here) ...
-  window.app = initializeApp(firebaseConfig); 
-</script>
-
 <script src="hooks.js"></script>
 <script src="game.js"></script>
 
