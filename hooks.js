@@ -1,212 +1,133 @@
-var gradle = { log: function(val){val && console.log( gradle.isMobile && (typeof val === 'object') ? JSON.stringify(val) : val );},
 /**
-	@kaviyarasan-1997
-	copyright @2021
-*/
+ * @kaviyarasan-1997 | Modified for Telegram Mini App & Firebase
+ * copyright @2021-2026
+ */
 
-    intervalAds    : 1,     //Ads each interval for example each 3 times
-	
-	//Game settings :
-	fullsize : true,
-	
-	
-	
-	
-	//Events manager :
-	//================
+// 1. Initialize Firebase (Using your provided config)
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getDatabase, ref, update, increment } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+const firebaseConfig = {
+    apiKey: "AIzaSyBb0upYoLF4_isVBfJUAMOEflMCgl5_5aE",
+    authDomain: "game-3a2e9.firebaseapp.com",
+    databaseURL: "https://game-3a2e9-default-rtdb.asia-southeast1.firebasedatabase.app",
+    projectId: "game-3a2e9",
+    storageBucket: "game-3a2e9.firebasestorage.app",
+    messagingSenderId: "107429496573",
+    appId: "1:107429496573:web:d713c43d7acf8a02232094",
+    measurementId: "G-4CWEE32ZF7"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+
+// 2. Main Game Logic Object
+window.gradle = { 
+    log: function(val){
+        val && console.log( gradle.isMobile && (typeof val === 'object') ? JSON.stringify(val) : val );
+    },
+
+    intervalAds: 1,
+    fullsize: true,
+    score: 0,
+    mute: false,
+    currentInterval: 0,
+    prefix: "gd.4026.",
+    enable_music: true,
+    enable_pause: true,
+
+    // Events manager
     event: function(ev, msg){
-		if(gradle.process(ev,msg))
+        if(gradle.process(ev,msg))
         switch(ev){
-
-		case 'first_start':   //First start
-			//gradle.showInter();
-			break;
-		case 'button_play':
-			gradle.showInter();
-			break;
-		case 'over_button_restart':
-			gradle.checkInterval() && gradle.showInter(); // <-- we check the interval if ok we show interstitial
-			break;
-		case 'oveer_button_back':
-			//gradle.showInter();
-			break;
-		case 'game_over':
-			//gradle.showInter();
-			break;
-		case 'game_revive':
-			//gradle.showInter();
-			break;
-		case 'test':
-			//gradle.checkInterval() && gradle.showInter();
-			break;
-		
+            case 'first_start': break;
+            case 'button_play': break;
+            case 'over_button_restart':
+                gradle.checkInterval();
+                break;
+            case 'game_over':
+                // Track game over event in Firebase
+                update(ref(db, 'stats/Knife'), { total_games_ended: increment(1) });
+                break;
         }
     },
 
-
-
-
-
-    //Ready : /!\ DO NOT CHANGE, ONLY IF YOU ARE AN EXPERT.
-    //=========================
-	start: function(){
-		setTimeout(function(){
-			phaserInit();
-		}, 400);
-		setTimeout(function(){gradle.event_ext('hide_splash');},10);
-    },
-	pause: function(){
-		console.log('gradle pause ...');
-		setTimeout(function(){
-			//main.phaserGame.paused= true;
-			gradle.log('>>>> mute');
-		},1200);
-    },
-	resume: function(){
-		console.log('gradle resume ...');
-		//main.phaserGame.paused     = false;
+    start: function(){
+        setTimeout(function(){ phaserInit(); }, 400);
     },
 
     run: function() {
         gradle.event('first_start');
-		gradle.isMobile = ( /(ipad|iphone|ipod|android|windows phone)/i.test(navigator.userAgent) );
+        gradle.isMobile = ( /(ipad|iphone|ipod|android|windows phone)/i.test(navigator.userAgent) );
         document.addEventListener("visibilitychange", gradle.onVisibilityChanged, false);
-		gradle.start();
-		setTimeout(function(){gradle.save_score(0,0);}, 800);
-    },
-	score : 0,
-    save_score(score, level){
-        gradle.event_ext('save_score|'+score+'|'+level);
+        gradle.start();
+        
+        // Track Live Visitor in Firebase
+        update(ref(db, 'live_users'), { total: increment(1) });
     },
 
-	mute: false,
-    event_ext: function(val){
-		if(this.isMobile && typeof jacob!='undefined'){
-		    if(val=='show_profile'){
-		        //gradle.enable_pause = false;
-		    }
-			jacob.do_event(val);
-		}
-	},
-	
-	shuffle: function(array) {
-	  var currentIndex = array.length, temporaryValue, randomIndex;
+    save_score: function(score, level){
+        // Save score to Firebase Live Database
+        const userRef = ref(db, 'leaderboard/Knife');
+        update(userRef, { 
+            last_score: score,
+            top_score: increment(0) // Logic to update if higher can be added here
+        });
+        console.log("Score Saved to Firebase: " + score);
+    },
 
-	  // While there remain elements to shuffle...
-	  while (0 !== currentIndex) {
-
-		// Pick a remaining element...
-		randomIndex = Math.floor(Math.random() * currentIndex);
-		currentIndex -= 1;
-
-		// And swap it with the current element.
-		temporaryValue = array[currentIndex];
-		array[currentIndex] = array[randomIndex];
-		array[randomIndex] = temporaryValue;
-	  }
-
-	  return array;
-	},
-
-	old_ev: null,
-process: function(ev, msg){
-		if(gradle.old_ev ==ev){
-			if(ev=='button_share' || ev=='button_play'){
-				console.log('repeat');
-				//return false;
-			}
-		}
+    process: function(ev, msg){
+        console.log("Processing Event: " + ev); // Debugging
+        
         switch(ev){
             case 'btn_more':
-                // Redirect to your Mad-Drive game or Hub
-                window.location.href = "https://mozhihub.github.io/Mad-drive/";
+                window.top.location.href = "https://mozhihub.github.io/Mad-drive/";
                 break;
             case 'btn_privacy':
-                // Link to a privacy policy (required for many bot platforms)
-                window.open("https://yourusername.github.io/privacy-policy", "_blank");
+                window.open("https://infolite-in.github.io/Hexa/privacy.html", "_blank");
                 break;
             case 'btn_share':
-                // Share to Telegram with a custom message and your game link
-                const shareText = encodeURIComponent("Check out this Knife Hit game!");
-                const shareUrl = encodeURIComponent(window.location.href);
+                const shareText = encodeURIComponent("🎯 I scored high in Knife Hit! Can you beat me?");
+                const shareUrl = encodeURIComponent("https://t.me/gamendbot");
                 window.open(`https://t.me/share/url?url=${shareUrl}&text=${shareText}`, "_blank");
                 break;
             case 'btn_profile':
-                // Redirect to your Telegram Bot Profile
-                window.location.href = "https://t.me/gamendbot";
+                window.top.location.href = "https://t.me/gamendbot";
                 break;
             case 'btn_exit_game':
-                // EXIT BUTTON FIX: Goes to a link of your choice (e.g., your Hexa game)
-                window.location.href = "https://mozhihub.github.io/Hexa/";
+                // Redirect back to main hub or another game
+                window.top.location.href = "https://infolite-in.github.io/Hexa/";
                 break;
         }
-		gradle.old_ev = ev;
-		gradle.log(ev,msg);
-		return true;
+        return true;
     },
 
-			  
-    showInter: function(){
-        if(!gradle.isMobile) return;
-        gradle.log('jacob|show_inter');
+    onVisibilityChanged: function(){
+        if (document.hidden || document.mozHidden || document.webkitHidden || document.msHidden){
+            gradle.pause();
+        }else{
+            gradle.resume();
+        }
     },
 
-	enable_music: true,
-    enable_pause: true,
-	onVisibilityChanged : function(){
-	    if (document.hidden || document.mozHidden || document.webkitHidden || document.msHidden){
-	        gradle.pause();
-	        setTimeout(function(){
-	            if(!gradle.enable_pause){
-                    gradle.resume();
-                }
-	        }, 500);
-		}else{
-		    gradle.enable_pause = true;
-			gradle.resume();
-		}
-	},
-
-	currentInterval : 0,
-	checkInterval: function(){
-		return (++gradle.currentInterval==gradle.intervalAds) ? !(gradle.currentInterval=0) : !1;
-	},
-	
-	prefix : "gd.4026.",
-	buildKey: function(key){
-		return gradle.prefix + key;
-	},
-
-	getItem: function(key, default_value){
-		var value;
-		try {
-			value = localStorage.getItem(gradle.buildKey(key));
-		}
-		catch(error){
-			return default_value;
-		}
-		if(value !== undefined && value !=null){
-			value = window.atob(value);
-		}
-		else{
-			value = default_value;
-		}
-		return value;
-	},
-
-	setItem: function(key, value){
-		var v = value;
-		if(v !== undefined){
-			v = window.btoa(v);
-		}
-		try{
-			localStorage.setItem(gradle.buildKey(key), v);
-			return value;
-		}
-		catch(error){
-			return undefined;
-		}
-	}
+    pause: function(){ console.log('Game Paused'); },
+    resume: function(){ console.log('Game Resumed'); },
+    checkInterval: function(){
+        return (++gradle.currentInterval==gradle.intervalAds) ? !(gradle.currentInterval=0) : !1;
+    },
+    buildKey: function(key){ return gradle.prefix + key; },
+    getItem: function(key, default_value){
+        try {
+            var value = localStorage.getItem(gradle.buildKey(key));
+            return value ? window.atob(value) : default_value;
+        } catch(e) { return default_value; }
+    },
+    setItem: function(key, value){
+        try {
+            localStorage.setItem(gradle.buildKey(key), window.btoa(value));
+        } catch(e) {}
+    }
 };
-gradle.run();
 
+// Start the game
+gradle.run();
