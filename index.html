@@ -3,8 +3,8 @@
 		<meta charset="utf-8">
 		<meta http-equiv="X-UA-Compatible" content="IE=edge">
 		<meta name="viewport" content="initial-scale=1, minimum-scale=1, maximum-scale=1.01, width=device-width, minimal-ui=1">
-		<link rel="stylesheet" href="css/normalize.css">
-		<link rel="stylesheet" href="css/game.css">
+		<link rel="stylesheet" href="Css/normalize.css">
+		<link rel="stylesheet" href="Css/game.css">
 		<style>
 			html, body {
 				-ms-touch-action: none;
@@ -18,11 +18,88 @@
 		</style>
 	</head>
 	<body>
+		<div id="neonHud" aria-hidden="true">
+			<div class="neonTop">
+				<div class="liveBadge"><span class="liveDot"></span><span>LIVE</span></div>
+				<div class="stat"><span>PLAYERS</span><b id="livePlayers">1</b></div>
+				<div class="stat"><span>VISITORS</span><b id="visitorCount">0</b></div>
+				<div class="stat"><span>LEVEL</span><b id="liveLevel">1</b></div>
+			</div>
+		</div>
 			<div id="wrongRotation">
 			<img src="images/rotate_screen.png" alt="" />
 		</div>
 
-		<div id="game"></div>
+		<div id="gameShell">
+			<div class="neonFrame" aria-hidden="true"></div>
+			<div id="game"></div>
+		</div>
+
+		<div id="gameModal" class="gameModal" aria-hidden="true">
+			<div class="modalCard">
+				<button class="modalClose" type="button" onclick="closeGameModal()">×</button>
+				<div id="modalIcon" class="modalIcon">✦</div>
+				<h2 id="modalTitle">Knife Hit</h2>
+				<div id="modalBody" class="modalBody"></div>
+				<div id="modalActions" class="modalActions"></div>
+			</div>
+		</div>
+
+		<div id="exitNotice" class="gameModal" aria-hidden="true">
+			<div class="modalCard smallCard">
+				<div class="modalIcon">↗</div>
+				<h2>Exit Game</h2>
+				<p class="modalBody">The game will close when your browser allows it. If it does not close automatically, use your browser's back or close-tab button.</p>
+				<div class="modalActions">
+					<button class="neonBtn" type="button" onclick="closeExitNotice()">CONTINUE PLAYING</button>
+				</div>
+			</div>
+		</div>
+
+\t\t<script>
+\t\t\tconst PORTFOLIO_URL = 'https://kaviyarasan-1997.github.io/Portfolio/';
+\t\t\tfunction openGameModal(title, icon, body, actions) {
+\t\t\t\tdocument.getElementById('modalTitle').textContent = title;
+\t\t\t\tdocument.getElementById('modalIcon').textContent = icon || '✦';
+\t\t\t\tdocument.getElementById('modalBody').innerHTML = body;
+\t\t\t\tdocument.getElementById('modalActions').innerHTML = actions || '<button class="neonBtn" onclick="closeGameModal()">CLOSE</button>';
+\t\t\t\tdocument.getElementById('gameModal').classList.add('show');
+\t\t\t\tdocument.getElementById('gameModal').setAttribute('aria-hidden','false');
+\t\t\t}
+\t\t\tfunction closeGameModal(){
+\t\t\t\tdocument.getElementById('gameModal').classList.remove('show');
+\t\t\t\tdocument.getElementById('gameModal').setAttribute('aria-hidden','true');
+\t\t\t}
+\t\t\tfunction closeExitNotice(){
+\t\t\t\tdocument.getElementById('exitNotice').classList.remove('show');
+\t\t\t\tdocument.getElementById('exitNotice').setAttribute('aria-hidden','true');
+\t\t\t}
+\t\t\tfunction showPrivacyPopup(){
+\t\t\t\topenGameModal('Privacy Policy','🛡️',
+\t\t\t\t\t'<p><b>Knife Hit – Privacy</b></p><p>This game may use Firebase Realtime Database for anonymous live-player, visitor, level and score statistics. No password or payment information is requested by the game.</p><p>Local game progress can be stored in your browser. You can close the game at any time.</p><p>For the full policy, use the button below.</p>',
+\t\t\t\t\t'<button class="neonBtn" onclick="window.open(\'privarcypolicy.txt\',\'_blank\')">FULL POLICY</button><button class="ghostBtn" onclick="closeGameModal()">CLOSE</button>');
+\t\t\t}
+\t\t\tasync function shareGame(){
+\t\t\t\tconst data={title:'Knife Hit Neon',text:'🎯 I am playing Knife Hit Neon! Can you beat my score?',url:location.href};
+\t\t\t\ttry { if(navigator.share){ await navigator.share(data); return; } } catch(e) { if(e && e.name==='AbortError') return; }
+\t\t\t\tconst text=encodeURIComponent(data.text+' '+data.url);
+\t\t\t\topenGameModal('Share Game','📤','Choose a way to share Knife Hit Neon with your friends.',
+\t\t\t\t\t'<button class="neonBtn" onclick="window.open(\'https://wa.me/?text='+text+'\',\'_blank\')">WHATSAPP</button><button class="neonBtn" onclick="window.open(\'https://t.me/share/url?url='+encodeURIComponent(location.href)+'&text='+encodeURIComponent(data.text)+'\',\'_blank\')">TELEGRAM</button><button class="ghostBtn" onclick="copyGameLink()">COPY LINK</button>');
+\t\t\t}
+\t\t\tasync function copyGameLink(){
+\t\t\t\ttry { await navigator.clipboard.writeText(location.href); openGameModal('Link Copied','✓','Game link copied. Share it with your friends!', '<button class="neonBtn" onclick="closeGameModal()">DONE</button>'); }
+\t\t\t\tcatch(e){ window.prompt('Copy game link:', location.href); }
+\t\t\t}
+\t\t\tfunction openMoreGames(){ window.open(PORTFOLIO_URL,'_blank','noopener'); }
+\t\t\tfunction exitGame(){
+\t\t\t\ttry { window.open('', '_self'); window.close(); } catch(e) {}
+\t\t\t\tsetTimeout(function(){
+\t\t\t\t\tdocument.getElementById('exitNotice').classList.add('show');
+\t\t\t\t\tdocument.getElementById('exitNotice').setAttribute('aria-hidden','false');
+\t\t\t\t},180);
+\t\t\t}
+\t\t\twindow.addEventListener('keydown',function(e){ if(e.key==='Escape'){closeGameModal();closeExitNotice();} });
+\t\t</script>
 
 		<div class="font_preload" style="opacity: 0">
 			<span style="font-family: 'gameFont', Arial, sans-serif;"></span>

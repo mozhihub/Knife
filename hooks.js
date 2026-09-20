@@ -1,97 +1,103 @@
 /**
- * @kaviyarasan-1997 | Fixed for Telegram & Firebase (No-Blank Version)
+ * Knife Hit - Firebase + Live HUD integration
+ * Uses the Firebase project supplied by the game owner.
  */
-
-// --- FIREBASE INITIALIZATION ---
-const firebaseConfig = {
-    apiKey: "AIzaSyBb0upYoLF4_isVBfJUAMOEflMCgl5_5aE",
-    authDomain: "game-3a2e9.firebaseapp.com",
-    databaseURL: "https://game-3a2e9-default-rtdb.asia-southeast1.firebasedatabase.app",
-    projectId: "game-3a2e9",
-    storageBucket: "game-3a2e9.firebasestorage.app",
-    messagingSenderId: "107429496573",
-    appId: "1:107429496573:web:d713c43d7acf8a02232094",
-    measurementId: "G-4CWEE32ZF7"
+const FIREBASE_CONFIG = {
+    apiKey: "AIzaSyCaALqxdtEPCNxg5XPPG81T9853gOPO4qY",
+    authDomain: "server-41203.firebaseapp.com",
+    databaseURL: "https://server-41203-default-rtdb.firebaseio.com",
+    projectId: "server-41203",
+    storageBucket: "server-41203.firebasestorage.app",
+    messagingSenderId: "26278139327",
+    appId: "1:26278139327:web:db44a7e2d8d42d690abd0a"
 };
 
-// Initialize Firebase safely
-if (typeof firebase !== 'undefined') {
-    firebase.initializeApp(firebaseConfig);
-    var db = firebase.database();
+var db = null;
+var firebaseReady = false;
+var liveSessionRef = null;
+var liveSessionId = 'u_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 8);
+
+function setHud(id, value) {
+    var el = document.getElementById(id);
+    if (el) el.textContent = value;
+}
+function safeNum(v, fallback) {
+    return typeof v === 'number' && isFinite(v) ? v : (fallback || 0);
+}
+function initFirebaseLive() {
+    if (typeof firebase === 'undefined' || !firebase.database) return;
+    try {
+        if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
+        db = firebase.database();
+        firebaseReady = true;
+
+        var statsRef = db.ref('knife/stats');
+        statsRef.child('visitors').transaction(function(v){ return (v || 0) + 1; })
+            .then(function(result){ setHud('visitorCount', safeNum(result.snapshot.val(), 0)); })
+            .catch(function(){ });
+
+        liveSessionRef = db.ref('knife/live/' + liveSessionId);
+        liveSessionRef.set({ online:true, level:1, score:0, lastSeen:firebase.database.ServerValue.TIMESTAMP });
+        liveSessionRef.onDisconnect().remove();
+
+        db.ref('knife/live').on('value', function(snap){
+            var count = 0;
+            snap.forEach(function(child){ if (child.val() && child.val().online !== false) count++; });
+            setHud('livePlayers', Math.max(1, count));
+        });
+    } catch (e) {
+        console.warn('Firebase live disabled:', e);
+    }
+}
+function updateLiveGame(level, score) {
+    if (!liveSessionRef) return;
+    liveSessionRef.update({ online:true, level:safeNum(level,1), score:safeNum(score,0), lastSeen:firebase.database.ServerValue.TIMESTAMP }).catch(function(){});
+    setHud('liveLevel', safeNum(level,1));
 }
 
-window.gradle = { 
+window.gradle = {
     log: function(val){ console.log(val); },
     intervalAds: 1,
     fullsize: true,
     score: 0,
-    isMobile: ( /(ipad|iphone|ipod|android|windows phone)/i.test(navigator.userAgent) ),
-
-    // Start the Phaser Game
+    isMobile: /(ipad|iphone|ipod|android|windows phone)/i.test(navigator.userAgent),
     start: function(){
-        setTimeout(function(){ 
-            if(typeof phaserInit === 'function') phaserInit(); 
-        }, 400);
+        initFirebaseLive();
+        setTimeout(function(){
+            if (typeof phaserInit === 'function') phaserInit();
+            else if (typeof window.phsrI === 'function') window.phsrI();
+        }, 50);
     },
-
-    run: function() {
-        gradle.event('first_start');
-        document.addEventListener("visibilitychange", gradle.onVisibilityChanged, false);
+    run: function(){
+        document.addEventListener('visibilitychange', gradle.onVisibilityChanged, false);
         gradle.start();
-        
-        // Track Visit in Firebase
-        if(db) db.ref('live_users').child('total').transaction(current => (current || 0) + 1);
     },
-
     save_score: function(score, level){
-        console.log("Saving Score: " + score);
-        if(db) {
-            db.ref('leaderboard/Knife').update({ 
-                last_score: score,
-                timestamp: Date.now()
-            });
+        gradle.score = safeNum(score,0);
+        updateLiveGame(level || 1, gradle.score);
+        if (db) {
+            db.ref('knife/leaderboard').push({ score:gradle.score, level:safeNum(level,1), timestamp:firebase.database.ServerValue.TIMESTAMP });
         }
     },
-
     process: function(ev, msg){
-        console.log("Button Clicked: " + ev);
-        
-        switch(ev){
-            case 'btn_more':
-                window.top.location.href = "https://mozhihub.github.io/Mad-drive/";
-                break;
-            case 'btn_share':
-                const shareText = encodeURIComponent("🎯 I'm playing Knife Hit! Can you beat me?");
-                const shareUrl = encodeURIComponent("https://t.me/gamendbot");
-                window.open(`https://t.me/share/url?url=${shareUrl}&text=${shareText}`, "_blank");
-                break;
-            case 'btn_profile':
-                window.top.location.href = "https://t.me/gamendbot";
-                break;
-            case 'btn_exit_game':
-                // Breaks out of Telegram frame and goes to your other game
-                window.top.location.href = "https://mozhihub.github.io/Hexa/";
-                break;
-            case 'btn_privacy':
-                window.open("https://mozhihub.github.io/Knife/", "_blank"); 
-                break;
-        }
+        if (ev === 'btn_more') window.open('https://kaviyarasan-1997.github.io/Portfolio/', '_blank', 'noopener');
+        else if (ev === 'btn_share') {
+            if (typeof shareGame === 'function') shareGame();
+        } else if (ev === 'btn_profile') window.top.location.href = 'https://t.me/gamendbot';
+        else if (ev === 'btn_exit_game') { if (typeof exitGame === 'function') exitGame(); }
+        else if (ev === 'btn_privacy') { if (typeof showPrivacyPopup === 'function') showPrivacyPopup(); }
         return true;
     },
-
     event: function(ev, msg){
-        if(gradle.process(ev,msg))
-        switch(ev){
-            case 'game_over':
-                if(db) db.ref('stats/Knife/total_plays').transaction(c => (c || 0) + 1);
-                break;
+        if (ev === 'game_over') {
+            if (db) db.ref('knife/stats/total_plays').transaction(function(c){ return (c || 0) + 1; });
+            updateLiveGame(1, gradle.score || 0);
         }
     },
-
     onVisibilityChanged: function(){
-        if (document.hidden) { console.log("Paused"); } else { console.log("Resumed"); }
+        if (!liveSessionRef) return;
+        liveSessionRef.update({online:!document.hidden, lastSeen:firebase.database.ServerValue.TIMESTAMP}).catch(function(){});
     }
 };
 
-// Start everything
 gradle.run();
